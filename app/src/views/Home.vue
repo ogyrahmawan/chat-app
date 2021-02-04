@@ -2,27 +2,28 @@
 <div>
   <Navbar />
   <div class="container-fluid h-100">
-      <div class="row justify-content-center h-100">
+      <div class="row justify-content-center mt-3 h-100">
         <div class="col-md-10 col-xl-6 chat">
           <div class="card">
             <div class="card-header msg_head">
               <div class="d-flex bd-highlight">
                 <div class="img_cont">
-                  <img src="" class="rounded-circle user_img">
+                  <img src="../assets/logo.png" class="rounded-circle user_img">
                 </div>
-                <div class="user_info">
+                <!-- <div class="user_info ml-3 mt-4">
                   <span>Qontak Group</span>
-                </div>
+                </div> -->
               </div>
             </div>
             <div class="card-body msg_card_body">
-              <Message v-for="(message, index) in getMessages" :key="index" :message="message" />
+              <Message v-for="(message, index) in messages" :key="index" :message="message" />
             </div>
             <div class="card-footer">
               <div class="input-group">
-              <input @keyup.enter="saveMessage" v-model="message" class="form-control type_msg" placeholder="Type your message...">
+              <input @keyup.enter="saveMessage" v-model="message" class="form-control type_msg" placeholder="Type your message..."
+              >
               <div class="input-group-append">
-                <button >send</button>
+                <span @click="saveMessage"  class="input-group-text send_btn"><i class="fas fa-location-arrow"></i></span>
               </div>
             </div>
           </div>
@@ -37,6 +38,26 @@
 // @ is an alias to /src
 import Navbar from '../components/Navbar'
 import Message from '../components/Message'
+import firebase from 'firebase/app'
+require('firebase/firestore')
+
+const firebaseConfig = {
+  apiKey: 'AIzaSyD_HUtttvPkXI4xs_3j7AVQLitoaJ0cbU4',
+  authDomain: 'qontak-app.firebaseapp.com',
+  databaseURL: 'https://qontak-app-default-rtdb.firebaseio.com',
+  projectId: 'qontak-app',
+  storageBucket: 'qontak-app.appspot.com',
+  messagingSenderId: '363247653149',
+  appId: '1:363247653149:web:6146ce9e4ec0e7b2a6d1f4'
+}
+// Initialize Firebase
+firebase.initializeApp(firebaseConfig)
+const db = firebase.firestore()
+// const chatsRef = db.collection('chats')
+window.db = db
+db.settings({
+  timestampsInSnapshots: true
+})
 
 export default {
   name: 'Home',
@@ -46,26 +67,33 @@ export default {
   },
   data () {
     return {
-      message: ''
+      message: '',
+      messages: []
     }
   },
   methods: {
     saveMessage () {
-      this.$store.dispatch('saveMessage', this.message)
+      db.collection('chat').add({
+        message: this.message,
+        createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+        username: localStorage.username
+      })
       this.message = ''
-      // this.fetchMessage()
+      this.fetchMessage()
     },
     fetchMessage () {
-      this.$store.dispatch('fetchMessage')
+      db.collection('chat').orderBy('createdAt')
+        .onSnapshot(querySnapshot => {
+          const allMessages = []
+          querySnapshot.forEach(doc => {
+            allMessages.push(doc.data())
+          })
+          this.messages = allMessages
+        })
     }
   },
   created () {
     this.fetchMessage()
-  },
-  computed: {
-    getMessages () {
-      return this.$store.state.messages
-    }
   }
 }
 </script>
@@ -86,7 +114,7 @@ body,html{
 .card{
   height: 500px;
   border-radius: 15px !important;
-  background-color: rgba(0,0,0,0.4) !important;
+  background-color: #f6f6f6 !important;
 }
 
 .msg_card_body{
@@ -117,10 +145,10 @@ body,html{
 }
 
 .user_img{
+  background: white;
   height: 70px;
   width: 70px;
   border:1.5px solid #f5f6fa;
-
 }
 .user_img_msg{
   height: 40px;
@@ -132,6 +160,10 @@ body,html{
   position: relative;
   height: 70px;
   width: 70px;
+}
+
+.img_cont img{
+  object-fit: scale-down;
 }
 .img_cont_msg{
   height: 40px;
