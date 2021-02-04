@@ -1,76 +1,29 @@
 <template>
-<div class="container-fluid h-100">
-    <div class="row justify-content-center h-100">
-      <div class="col-md-4 col-xl-3 chat"><div class="card mb-sm-3 mb-md-0 contacts_card">
-        <div class="card-header">
-          <div class="input-group">
-            <input type="text" placeholder="Search..." name="" class="form-control search">
-            <div class="input-group-prepend">
-              <span class="input-group-text search_btn"><i class="fas fa-search"></i></span>
-            </div>
-          </div>
-        </div>
-        <div class="card-body contacts_body">
-          <ui class="contacts">
-          <li class="active">
-            <div class="d-flex bd-highlight">
-              <div class="img_cont">
-                <img src="" class="rounded-circle user_img">
-              </div>
-              <div class="user_info">
-                <span>Qontak Group</span>
+<div>
+  <Navbar />
+  <div class="container-fluid h-100">
+      <div class="row justify-content-center h-100">
+        <div class="col-md-10 col-xl-6 chat">
+          <div class="card">
+            <div class="card-header msg_head">
+              <div class="d-flex bd-highlight">
+                <div class="img_cont">
+                  <img src="" class="rounded-circle user_img">
+                </div>
+                <div class="user_info">
+                  <span>Qontak Group</span>
+                </div>
               </div>
             </div>
-          </li>
-          </ui>
-        </div>
-        <div class="card-footer"></div>
-      </div></div>
-      <div class="col-md-8 col-xl-6 chat">
-        <div class="card">
-          <div class="card-header msg_head">
-            <div class="d-flex bd-highlight">
-              <div class="img_cont">
-                <img src="" class="rounded-circle user_img">
-              </div>
-              <div class="user_info">
-                <span>Qontak Group</span>
-                <p>3 member</p>
-              </div>
-              <div class="video_cam">
-                <span><i class="fas fa-video"></i></span>
-                <span><i class="fas fa-phone"></i></span>
-              </div>
+            <div class="card-body msg_card_body">
+              <Message v-for="(message, index) in getMessages" :key="index" :message="message" />
             </div>
-            <span id="action_menu_btn"><i class="fas fa-ellipsis-v"></i></span>
-            <div class="action_menu">
-              <ul>
-                <li><i class="fas fa-user-circle"></i> View profile</li>
-                <li><i class="fas fa-users"></i> Add to close friends</li>
-                <li><i class="fas fa-plus"></i> Add to group</li>
-                <li><i class="fas fa-ban"></i> Block</li>
-              </ul>
-            </div>
-          </div>
-          <div class="card-body msg_card_body">
-            <div class="d-flex justify-content-start mb-4">
-              <div class="img_cont_msg">
-                <img src="https://static.turbosquid.com/Preview/001292/481/WV/_D.jpg" class="rounded-circle user_img_msg">
-              </div>
-              <div class="msg_cotainer">
-                Hi, how are you samim?
-                <span class="msg_time">8:40 AM, Today</span>
-              </div>
-            </div>
-          </div>
-          <div class="card-footer">
-            <div class="input-group">
+            <div class="card-footer">
+              <div class="input-group">
+              <input @keyup.enter="saveMessage" v-model="message" class="form-control type_msg" placeholder="Type your message...">
               <div class="input-group-append">
-                <span class="input-group-text attach_btn"><i class="fas fa-paperclip"></i></span>
+                <button >send</button>
               </div>
-            <input @keyup.enter="saveMessage" v-model="message" class="form-control type_msg" placeholder="Type your message...">
-            <div class="input-group-append">
-              <button >send</button>
             </div>
           </div>
         </div>
@@ -82,57 +35,37 @@
 
 <script>
 // @ is an alias to /src
-
-import firebase from 'firebase/app'
-require('firebase/firestore')
-
-const firebaseConfig = {
-  apiKey: 'AIzaSyD_HUtttvPkXI4xs_3j7AVQLitoaJ0cbU4',
-  authDomain: 'qontak-app.firebaseapp.com',
-  databaseURL: 'https://qontak-app-default-rtdb.firebaseio.com',
-  projectId: 'qontak-app',
-  storageBucket: 'qontak-app.appspot.com',
-  messagingSenderId: '363247653149',
-  appId: '1:363247653149:web:6146ce9e4ec0e7b2a6d1f4'
-}
-// Initialize Firebase
-firebase.initializeApp(firebaseConfig)
-const db = firebase.firestore()
-// const chatsRef = db.collection('chats')
-window.db = db
-db.settings({
-  timestampsInSnapshots: true
-})
+import Navbar from '../components/Navbar'
+import Message from '../components/Message'
 
 export default {
   name: 'Home',
+  components: {
+    Message,
+    Navbar
+  },
   data () {
     return {
-      message: '',
-      messages: []
+      message: ''
     }
   },
   methods: {
     saveMessage () {
-      db.collection('chat').add({
-        message: this.message
-      })
+      this.$store.dispatch('saveMessage', this.message)
       this.message = ''
+      // this.fetchMessage()
     },
     fetchMessage () {
-      db.collection('chat').get()
-        .then(querySnapshot => {
-          const allMessages = []
-          querySnapshot.forEach(doc => {
-            allMessages.push(doc.data())
-          })
-          console.log(allMessages)
-          // this.messages = allMessage
-        })
+      this.$store.dispatch('fetchMessage')
     }
   },
   created () {
     this.fetchMessage()
+  },
+  computed: {
+    getMessages () {
+      return this.$store.state.messages
+    }
   }
 }
 </script>
@@ -155,11 +88,7 @@ body,html{
   border-radius: 15px !important;
   background-color: rgba(0,0,0,0.4) !important;
 }
-.contacts_body{
-  padding:  0.75rem 0 !important;
-  overflow-y: auto;
-  white-space: nowrap;
-}
+
 .msg_card_body{
   overflow-y: auto;
 }
@@ -174,16 +103,7 @@ body,html{
 .container{
   align-content: center;
 }
-.search{
-  border-radius: 15px 0 0 15px !important;
-  background-color: rgba(0,0,0,0.3) !important;
-  border:0 !important;
-  color:white !important;
-}
-.search:focus{
-      box-shadow:none !important;
-        outline:0px !important;
-}
+
 .type_msg{
   background-color: rgba(0,0,0,0.3) !important;
   border:0 !important;
@@ -195,39 +115,7 @@ body,html{
   box-shadow:none !important;
   outline:0px !important;
 }
-.attach_btn{
-  border-radius: 15px 0 0 15px !important;
-  background-color: rgba(0,0,0,0.3) !important;
-  border:0 !important;
-  color: white !important;
-  cursor: pointer;
-}
-.send_btn{
-  border-radius: 0 15px 15px 0 !important;
-  background-color: rgba(0,0,0,0.3) !important;
-  border:0 !important;
-  color: white !important;
-  cursor: pointer;
-}
-.search_btn{
-  border-radius: 0 15px 15px 0 !important;
-  background-color: rgba(0,0,0,0.3) !important;
-  border:0 !important;
-  color: white !important;
-  cursor: pointer;
-}
-.contacts{
-  list-style: none;
-  padding: 0;
-}
-.contacts li{
-  width: 100% !important;
-  padding: 5px 10px;
-  margin-bottom: 15px !important;
-}
-.active{
-  background-color: rgba(0,0,0,0.3);
-}
+
 .user_img{
   height: 70px;
   width: 70px;
@@ -249,42 +137,7 @@ body,html{
   height: 40px;
   width: 40px;
 }
-.online_icon{
-  position: absolute;
-  height: 15px;
-  width:15px;
-  background-color: #4cd137;
-  border-radius: 50%;
-  bottom: 0.2em;
-  right: 0.4em;
-  border:1.5px solid white;
-}
-.offline{
-  background-color: #c23616 !important;
-}
-.user_info{
-  margin-top: auto;
-  margin-bottom: auto;
-  margin-left: 15px;
-}
-.user_info span{
-  font-size: 20px;
-  color: white;
-}
-.user_info p{
-  font-size: 10px;
-  color: rgba(255,255,255,0.6);
-}
-.video_cam{
-  margin-left: 50px;
-  margin-top: 5px;
-}
-.video_cam span{
-  color: white;
-  font-size: 20px;
-  cursor: pointer;
-  margin-right: 20px;
-}
+
 .msg_cotainer{
   margin-top: auto;
   margin-bottom: auto;
@@ -327,35 +180,6 @@ body,html{
   color: white;
   cursor: pointer;
   font-size: 20px;
-}
-.action_menu{
-  z-index: 1;
-  position: absolute;
-  padding: 15px 0;
-  background-color: rgba(0,0,0,0.5);
-  color: white;
-  border-radius: 15px;
-  top: 30px;
-  right: 15px;
-  display: none;
-}
-.action_menu ul{
-  list-style: none;
-  padding: 0;
-  margin: 0;
-}
-.action_menu ul li{
-  width: 100%;
-  padding: 10px 15px;
-  margin-bottom: 5px;
-}
-.action_menu ul li i{
-  padding-right: 10px;
-
-}
-.action_menu ul li:hover{
-  cursor: pointer;
-  background-color: rgba(0,0,0,0.2);
 }
 
 @media(max-width: 576px){
